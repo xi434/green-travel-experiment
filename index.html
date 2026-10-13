@@ -3823,9 +3823,7 @@ function startPracticeTrial() {
             const iframe = document.getElementById('reading-iframe');
             if (iframe) iframe.srcdoc = "";
 
-            showScreen(screenInfo);
-            canvasContainer.style.display = 'none';
-            hud.style.opacity = '0';
+            window.location.href = '/';
         }
 
         function ensureScaleResponsesExist() {
