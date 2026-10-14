@@ -2504,6 +2504,101 @@ const CTRL_ATTENTION_QUESTIONS = [
             { blockId: 4, car: [10, 20, 5, 5, 20, 15], bike: [15, 30, 20, 25, 50, 75] }    
         ];
 
+function persistCurrentProgress() {
+    try {
+        const nowTimeStr = currentSessionTimestamp || new Date().toLocaleString('zh-CN', { hour12: false });
+        const realGroup = (participantGroup === '实验组' || participantGroup === '控制组')
+            ? participantGroup : '实验组';
+
+        let allData = JSON.parse(localStorage.getItem('GreenTravel_Persistent_AllData') || '[]');
+        allData = allData.filter(item => item.sessionId !== currentSessionId);
+
+        // 如果已有该 session 的正式试次数据，就合并；否则新建
+        const existingTrials = experimentResults && experimentResults.length > 0
+            ? experimentResults
+            : [{
+                trialIndex: '-', blockNumber: '-', choice: '进行中',
+                timeMinutes: '-', co2: '-', rt: '-', donationAmount: 0,
+                group: realGroup, participantId: participantId, timestamp: nowTimeStr
+            }];
+
+        const records = existingTrials.map(r => ({
+            ...r,
+            sessionId: currentSessionId,
+            participantId: participantId,
+            consent: participantConsent || '同意',
+            group: realGroup,
+
+            demo_gender: demoGender || '',
+            demo_age: demoAge || '',
+            demo_edu: demoEdu || '',
+            demo_income: demoIncome || '',
+            demo_ses: demoSes || '',
+
+            ck1: climateKnowledgeResponses.ck1 ?? '',
+            ck2: climateKnowledgeResponses.ck2 ?? '',
+            ck3: climateKnowledgeResponses.ck3 ?? '',
+            ck4: climateKnowledgeResponses.ck4 ?? '',
+            ck5: climateKnowledgeResponses.ck5 ?? '',
+            ck6: climateKnowledgeResponses.ck6 ?? '',
+            ck_order: (climateKnowledgePresentationOrder || []).join(';'),
+
+            z1: envResourceResponses.z1 ?? '',
+            z2: envResourceResponses.z2 ?? '',
+            z3: envResourceResponses.z3 ?? '',
+            z4: envResourceResponses.z4 ?? '',
+            z5: envResourceResponses.z5 ?? '',
+            z_order: (envResourcePresentationOrder || []).join(';'),
+
+            f1: financialResponses.f1 ?? '',
+            f2: financialResponses.f2 ?? '',
+            f3: financialResponses.f3 ?? '',
+            f_order: (financialPresentationOrder || []).join(';'),
+
+            scale_q1: scaleResponses.q1 ?? '',
+            scale_q2: scaleResponses.q2 ?? '',
+            scale_q3: scaleResponses.q3 ?? '',
+            scale_q4: scaleResponses.q4 ?? '',
+            scale_q5: scaleResponses.q5 ?? '',
+            scale_q6: scaleResponses.q6 ?? '',
+            scale_q7: scaleResponses.q7 ?? '',
+            scale_q8: scaleResponses.q8 ?? '',
+            scale_order: (scalePresentationOrder || []).join(';'),
+
+            social_s1: socialScaleResponses.s1 ?? '',
+            social_s2: socialScaleResponses.s2 ?? '',
+            social_s3: socialScaleResponses.s3 ?? '',
+            social_s4: socialScaleResponses.s4 ?? '',
+            social_s5: socialScaleResponses.s5 ?? '',
+            social_s6: socialScaleResponses.s6 ?? '',
+            social_s7: socialScaleResponses.s7 ?? '',
+            social_order: (socialScalePresentationOrder || []).join(';'),
+
+            comp_answer1: comprehensionResponses[currentComprehensionOrder[0] ? currentComprehensionOrder[0].id : ''] ?? '',
+            comp_answer2: comprehensionResponses[currentComprehensionOrder[1] ? currentComprehensionOrder[1].id : ''] ?? '',
+            comp_order: (comprehensionPresentationOrder || []).join(';'),
+            comp_option_order: currentComprehensionOrder.map(q => q.id + ':' + (q.optionOrder || []).join(',')).join('|'),
+
+            comp_exp_q1_text: getCompAnswerText('exp_q1', comprehensionResponses['exp_q1']),
+            comp_exp_q2_text: getCompAnswerText('exp_q2', comprehensionResponses['exp_q2']),
+            comp_ctrl_q1_text: getCompAnswerText('ctrl_q1', comprehensionResponses['ctrl_q1']),
+            comp_ctrl_q2_text: getCompAnswerText('ctrl_q2', comprehensionResponses['ctrl_q2']),
+            comp_exp_q1_code: comprehensionResponses['exp_q1'] ?? '',
+            comp_exp_q2_code: comprehensionResponses['exp_q2'] ?? '',
+            comp_ctrl_q1_code: comprehensionResponses['ctrl_q1'] ?? '',
+            comp_ctrl_q2_code: comprehensionResponses['ctrl_q2'] ?? '',
+
+            experimentTotalDurationSec: experimentTotalDurationSec || 0,
+            timestamp: r.timestamp || nowTimeStr
+        }));
+
+        allData = allData.concat(records);
+        localStorage.setItem('GreenTravel_Persistent_AllData', JSON.stringify(allData));
+    } catch (e) {
+        console.warn('进度即时保存失败', e);
+    }
+}
+
         function generateSessionId() {
             return 'sess_' + Date.now() + '_' + Math.random().toString(36).substring(2, 8);
         }
@@ -2755,6 +2850,7 @@ function getCompAnswerText(qId, code) {
 
             if (selectedValue === "同意") {
                 experimentStartTime = performance.now();   // ← 新增：实验开始计时
+persistCurrentProgress();
                 goToDemographicsPhase();
             } else {
                 recordConsentDisagreementAndExit();
@@ -2799,7 +2895,7 @@ function getCompAnswerText(qId, code) {
             demoEdu = e;
             demoIncome = i;
             demoSes = s;
-
+persistCurrentProgress();
             goToClimateKnowledgePhase();
         }
 
@@ -2906,6 +3002,7 @@ function getCompAnswerText(qId, code) {
             }
 
             if (valMsg) valMsg.classList.add('hidden');
+persistCurrentProgress();
             goToEnvResourcesPhase();
         }
 
@@ -3010,6 +3107,7 @@ function getCompAnswerText(qId, code) {
             }
 
             if (valMsg) valMsg.classList.add('hidden');
+persistCurrentProgress();
             goToFinancialPhase();
         }
 
@@ -3115,6 +3213,7 @@ function getCompAnswerText(qId, code) {
             }
 
             if (valMsg) valMsg.classList.add('hidden');
+persistCurrentProgress();
             goToPreReadingInstructions();
         }
 
@@ -3354,21 +3453,6 @@ q.options.forEach((opt, idx) => {
                 if (valMsg) valMsg.classList.remove('hidden');
                 return; // 有没选的，直接拦截，不准进入下一步
             }
-
-function showEarlyTerminationPage() {
-    // 复用结束页面，但改成“质量不合格提前结束”的文案
-    const endTitle = document.getElementById('end-page-title');
-    const endThank = document.getElementById('end-thank-statement');
-
-    if (endTitle) endTitle.textContent = "实验已结束";
-    if (endThank) {
-        endThank.textContent = "感谢您参与本次实验。由于您在实验中的部分回答未符合我们的数据质量要求，本次实验已提前结束，感谢您的配合。";
-    }
-
-    // 显示结束页面
-    showScreen(screenEnd);
-}
-
             if (valMsg) valMsg.classList.add('hidden');
 
  // ========== 【新增】判断阅读理解题答案是否正确 ==========
@@ -3390,55 +3474,127 @@ function showEarlyTerminationPage() {
         }
     });
 
-    // 如果答错了，弹出提示并跳转到提前结束页面
+    // 如果答错了，先保存数据再跳转到提前结束页面
     if (!allCorrect) {
+        // 1. 把当前所有状态（人口学 + CK + Z + F + 阅读理解）写入 localStorage
+        persistEarlyTerminationData();
         showEarlyTerminationPage();
         return;   // 直接结束，不再往下走
     }
     // ========== 【新增结束】 ==========
-
-            // 立刻把阅读理解答案写入 localStorage，关闭网页也不丢
-            try {
-                var _tmpAll = JSON.parse(localStorage.getItem('GreenTravel_Persistent_AllData') || '[]');
-                _tmpAll = _tmpAll.filter(function(item){ return item.sessionId !== currentSessionId; });
-                var _nowStr = currentSessionTimestamp || new Date().toLocaleString('zh-CN', { hour12: false });
-                var _group = (participantGroup === '实验组' || participantGroup === '控制组') ? participantGroup : '实验组';
-                var _q1Id = currentComprehensionOrder[0] ? currentComprehensionOrder[0].id : '';
-                var _q2Id = currentComprehensionOrder[1] ? currentComprehensionOrder[1].id : '';
-                var _ans1Code = comprehensionResponses[_q1Id] ?? '';
-                var _ans2Code = comprehensionResponses[_q2Id] ?? '';
-                var _ans1 = getCompAnswerText(_q1Id, _ans1Code);
-                var _ans2 = getCompAnswerText(_q2Id, _ans2Code);
-                var _order = (comprehensionPresentationOrder && comprehensionPresentationOrder.length > 0) ? comprehensionPresentationOrder.join(';') : '';
-                var _optOrder = currentComprehensionOrder.map(q => q.id + ':' + q.optionOrder.join(',')).join('|');
-                var _rows = (experimentResults && experimentResults.length > 0) ? experimentResults : [{ trialIndex: '-', blockNumber: '-', choice: '-', timeMinutes: '-', co2: '-', rt: '-', donationAmount: 0, group: _group, participantId: participantId, timestamp: _nowStr }];
-                var _save = _rows.map(function(r){
-                    return Object.assign({}, r, {
-                        sessionId: currentSessionId,
-                        participantId: participantId,
-                        consent: participantConsent || '同意',
-                        group: _group,
-                        comp_answer1: _ans1,
-                        comp_answer2: _ans2,
-                        comp_order: _order,
-                        comp_option_order: _optOrder,
-                        comp_exp_q1_text: getCompAnswerText('exp_q1', comprehensionResponses['exp_q1']),
-                        comp_exp_q2_text: getCompAnswerText('exp_q2', comprehensionResponses['exp_q2']),
-                        comp_ctrl_q1_text: getCompAnswerText('ctrl_q1', comprehensionResponses['ctrl_q1']),
-                        comp_ctrl_q2_text: getCompAnswerText('ctrl_q2', comprehensionResponses['ctrl_q2']),
-                        comp_exp_q1_code: comprehensionResponses['exp_q1'] ?? '',
-                        comp_exp_q2_code: comprehensionResponses['exp_q2'] ?? '',
-                        comp_ctrl_q1_code: comprehensionResponses['ctrl_q1'] ?? '',
-                        comp_ctrl_q2_code: comprehensionResponses['ctrl_q2'] ?? '',
-                        timestamp: r.timestamp || _nowStr
-                    });
-                });
-                _tmpAll = _tmpAll.concat(_save);
-                localStorage.setItem('GreenTravel_Persistent_AllData', JSON.stringify(_tmpAll));
-            } catch(e) { console.warn('阅读理解答案即时保存失败', e); }
-
+            persistCurrentProgress();
             startScalePhase(); // 全部答完，进入后面的量表环节
         }
+
+function persistEarlyTerminationData() {
+    try {
+        const nowTimeStr = currentSessionTimestamp || new Date().toLocaleString('zh-CN', { hour12: false });
+        const realGroup = (participantGroup === '实验组' || participantGroup === '控制组')
+            ? participantGroup : '实验组';
+
+        // 从已有数据中移除同 sessionId 的记录，避免重复
+        let allData = JSON.parse(localStorage.getItem('GreenTravel_Persistent_AllData') || '[]');
+        allData = allData.filter(item => item.sessionId !== currentSessionId);
+
+        // 组装一条"提前结束"记录
+        const record = {
+            sessionId: currentSessionId,
+            participantId: participantId,
+            consent: participantConsent || '同意',
+            group: realGroup,
+
+            // 人口统计学
+            demo_gender: demoGender || '',
+            demo_age: demoAge || '',
+            demo_edu: demoEdu || '',
+            demo_income: demoIncome || '',
+            demo_ses: demoSes || '',
+
+            // 气候变化知识 CK1-CK6
+            ck1: climateKnowledgeResponses.ck1 ?? '',
+            ck2: climateKnowledgeResponses.ck2 ?? '',
+            ck3: climateKnowledgeResponses.ck3 ?? '',
+            ck4: climateKnowledgeResponses.ck4 ?? '',
+            ck5: climateKnowledgeResponses.ck5 ?? '',
+            ck6: climateKnowledgeResponses.ck6 ?? '',
+            ck_order: (climateKnowledgePresentationOrder && climateKnowledgePresentationOrder.length > 0)
+                ? climateKnowledgePresentationOrder.join(';') : '',
+
+            // 环境资源感知 Z1-Z5
+            z1: envResourceResponses.z1 ?? '',
+            z2: envResourceResponses.z2 ?? '',
+            z3: envResourceResponses.z3 ?? '',
+            z4: envResourceResponses.z4 ?? '',
+            z5: envResourceResponses.z5 ?? '',
+            z_order: (envResourcePresentationOrder && envResourcePresentationOrder.length > 0)
+                ? envResourcePresentationOrder.join(';') : '',
+
+            // 个人财务感受 F1-F3
+            f1: financialResponses.f1 ?? '',
+            f2: financialResponses.f2 ?? '',
+            f3: financialResponses.f3 ?? '',
+            f_order: (financialPresentationOrder && financialPresentationOrder.length > 0)
+                ? financialPresentationOrder.join(';') : '',
+
+            // 试次相关（提前结束没有试次数据）
+            trialIndex: '-',
+            blockNumber: '-',
+            choice: '答题不合格提前结束',
+            timeMinutes: '-',
+            co2: '-',
+            rt: '-',
+            donationAmount: '-',
+
+            // 操纵量表（尚未填，留空）
+            scale_q1: '', scale_q2: '', scale_q3: '', scale_q4: '',
+            scale_q5: '', scale_q6: '', scale_q7: '', scale_q8: '',
+            scale_order: '',
+
+            // 社会期许量表（尚未填，留空）
+            social_s1: '', social_s2: '', social_s3: '', social_s4: '',
+            social_s5: '', social_s6: '', social_s7: '',
+            social_order: '',
+
+            // 阅读理解答案（保存下来便于分析）
+            comp_answer1: comprehensionResponses[currentComprehensionOrder[0] ? currentComprehensionOrder[0].id : ''] ?? '',
+            comp_answer2: comprehensionResponses[currentComprehensionOrder[1] ? currentComprehensionOrder[1].id : ''] ?? '',
+            comp_order: (comprehensionPresentationOrder && comprehensionPresentationOrder.length > 0)
+                ? comprehensionPresentationOrder.join(';') : '',
+            comp_option_order: currentComprehensionOrder.map(q => q.id + ':' + (q.optionOrder || []).join(',')).join('|'),
+
+            comp_exp_q1_text: getCompAnswerText('exp_q1', comprehensionResponses['exp_q1']),
+            comp_exp_q2_text: getCompAnswerText('exp_q2', comprehensionResponses['exp_q2']),
+            comp_ctrl_q1_text: getCompAnswerText('ctrl_q1', comprehensionResponses['ctrl_q1']),
+            comp_ctrl_q2_text: getCompAnswerText('ctrl_q2', comprehensionResponses['ctrl_q2']),
+            comp_exp_q1_code: comprehensionResponses['exp_q1'] ?? '',
+            comp_exp_q2_code: comprehensionResponses['exp_q2'] ?? '',
+            comp_ctrl_q1_code: comprehensionResponses['ctrl_q1'] ?? '',
+            comp_ctrl_q2_code: comprehensionResponses['ctrl_q2'] ?? '',
+
+            experimentTotalDurationSec: 0,
+            timestamp: nowTimeStr
+        };
+
+        allData.push(record);
+        localStorage.setItem('GreenTravel_Persistent_AllData', JSON.stringify(allData));
+    } catch (e) {
+        console.warn('提前结束数据保存失败', e);
+    }
+}
+
+function showEarlyTerminationPage() {
+    // 复用结束页面，但改成“质量不合格提前结束”的文案
+    const endTitle = document.getElementById('end-page-title');
+    const endThank = document.getElementById('end-thank-statement');
+
+    if (endTitle) endTitle.textContent = "实验已结束";
+    if (endThank) {
+        endThank.textContent = "感谢您参与本次实验。由于您在实验中的部分回答未符合我们的数据质量要求，本次实验已提前结束，感谢您的配合。";
+    }
+
+    // 显示结束页面
+    showScreen(screenEnd);
+}
 
         function startScalePhase() {
             scaleResponses = {};
@@ -3540,6 +3696,7 @@ function showEarlyTerminationPage() {
             }
 
             if (validationMsg) validationMsg.classList.add('hidden');
+persistCurrentProgress();
             goToInstructions1();
         }
 
@@ -3823,7 +3980,7 @@ function startPracticeTrial() {
             const iframe = document.getElementById('reading-iframe');
             if (iframe) iframe.srcdoc = "";
 
-            window.location.href = '/';
+    window.location.href = '/';
         }
 
         function ensureScaleResponsesExist() {
@@ -3943,9 +4100,17 @@ function startPracticeTrial() {
         }
 
         function saveResultsToLocalStorage() {
-            if (!experimentResults || experimentResults.length === 0) return;
+// 【新增】如果同 sessionId 已经有"答题不合格提前结束"的记录，就不再覆盖
+    let allDataCheck = JSON.parse(localStorage.getItem('GreenTravel_Persistent_AllData') || '[]');
+    const existing = allDataCheck.filter(item => item.sessionId === currentSessionId);
+    if (existing.some(r => r.choice === '答题不合格提前结束')) {
+        console.log('该 session 已存在"答题不合格提前结束"记录，跳过覆盖');
+        return;
+    }
+    // 允许无试次也保存（用兜底记录），避免中途退出数据丢失
+    if (!experimentResults) experimentResults = [];
 
-            ensureScaleResponsesExist();
+    ensureScaleResponsesExist();
 
             let allData = JSON.parse(localStorage.getItem('GreenTravel_Persistent_AllData') || '[]');
             allData = allData.filter(item => item.sessionId !== currentSessionId);
@@ -3956,15 +4121,26 @@ function startPracticeTrial() {
 
             const nowTimeStr = currentSessionTimestamp || new Date().toLocaleString('zh-CN', { hour12: false });
 
-            const resultsToSave = experimentResults.map(r => ({
+// 若无试次数据，用一条兜底记录代替
+const rows = experimentResults.length > 0 ? experimentResults : [{
+    trialIndex: '-',
+    blockNumber: '-',
+    choice: '未完成试次',
+    timeMinutes: '-',
+    co2: '-',
+    rt: '-',
+    donationAmount: 0,
+    group: participantGroup,
+    participantId: participantId,
+    timestamp: currentSessionTimestamp
+}];
+
+const resultsToSave = rows.map(r => ({
                 ...r,
                 sessionId: currentSessionId,
                 participantId: participantId,
                 consent: '同意',
-                comp_answer1: '',
-                comp_answer2: '',
-                comp_order: '',
-                demo_gender: '-',
+                demo_gender: demoGender || '',
                 demo_age: demoAge || '',
                 demo_edu: demoEdu || '',
                 demo_income: demoIncome || '',
@@ -4140,8 +4316,16 @@ const totalDuration = (r.experimentTotalDurationSec !== undefined && r.experimen
                 } else if (r.choice === '拒绝参与') {
                     choiceText = '拒绝参与';
                     choiceColor = 'text-rose-600 font-bold';
-                }
-
+                } else if (r.choice === '答题不合格提前结束') {
+                    choiceText = '答题不合格提前结束';
+                    choiceColor = 'text-amber-600 font-bold';
+                } else if (r.choice === '未完成试次') {
+                    choiceText = '未完成';
+                    choiceColor = 'text-gray-500 font-bold';
+                } else if (r.choice === '进行中') {
+                    choiceText = '进行中';
+                    choiceColor = 'text-blue-600 font-bold';
+}
                 row.innerHTML = `
                     <td class="p-3 font-bold">${r.participantId}</td>
                     <td class="p-3 text-center">${consentBadge}</td>
@@ -4872,7 +5056,6 @@ const totalDuration = (r.experimentTotalDurationSec !== undefined && r.experimen
             }
         }
     </script>
-    </script>
-    
+
 </body>
 </html>
