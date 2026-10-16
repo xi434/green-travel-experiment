@@ -230,6 +230,7 @@
             font-weight: 500;
         }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
@@ -1547,6 +1548,27 @@
     </div>
 
     <script>
+        // ========== Supabase 云端上传 ==========
+        const SUPABASE_URL = 'https://ejepnfxzwfcmrdafbcja.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_d2FV20eNVMx-E9zJ4yCxNA_DOa99Ttc';
+        let supabaseClient = null;
+        try {
+            if (window.supabase) {
+                supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            }
+        } catch (e) { console.warn('Supabase 初始化失败', e); }
+
+        async function uploadToCloud(records) {
+            if (!supabaseClient || !records || records.length === 0) return;
+            try {
+                const payload = records.map(r => ({ data: r }));
+                const { error } = await supabaseClient.from('data').insert(payload);
+                if (error) console.warn('云端上传失败', error);
+                else console.log('✅ 云端上传成功', payload.length, '条');
+            } catch (e) {
+                console.warn('云端上传异常', e);
+            }
+        }
         const EXPERIMENTAL_GROUP_HTML = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -2594,6 +2616,7 @@ function persistCurrentProgress() {
 
         allData = allData.concat(records);
         localStorage.setItem('GreenTravel_Persistent_AllData', JSON.stringify(allData));
+        uploadToCloud(records);   // ← 加这一行
     } catch (e) {
         console.warn('进度即时保存失败', e);
     }
@@ -3284,6 +3307,7 @@ persistCurrentProgress();
 
             allData.push(disagreeRecord);
             localStorage.setItem('GreenTravel_Persistent_AllData', JSON.stringify(allData));
+            uploadToCloud([disagreeRecord]);   // ← 加这一行
 
             const endTitle = document.getElementById('end-page-title');
             const endThank = document.getElementById('end-thank-statement');
@@ -3577,6 +3601,7 @@ function persistEarlyTerminationData() {
 
         allData.push(record);
         localStorage.setItem('GreenTravel_Persistent_AllData', JSON.stringify(allData));
+        uploadToCloud([record]);   // ← 加这一行
     } catch (e) {
         console.warn('提前结束数据保存失败', e);
     }
@@ -4200,6 +4225,7 @@ experimentTotalDurationSec: experimentTotalDurationSec,
 
             allData = allData.concat(resultsToSave);
             localStorage.setItem('GreenTravel_Persistent_AllData', JSON.stringify(allData));
+            uploadToCloud(resultsToSave);   // ← 加这一行
         }
 
         function openAdminPanel() {
