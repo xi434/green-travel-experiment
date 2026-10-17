@@ -3437,9 +3437,9 @@ q.options.forEach((opt, idx) => {
         <label class="flex items-center gap-3 p-3.5 bg-white border border-gray-200 rounded-xl hover:bg-blue-50/50 cursor-pointer transition">
             <input type="radio" 
                    name="comp_${q.id}" 
-                   value="${opt.code}" 
+                   value="${letter}" 
                    class="w-5 h-5 accent-blue-600 cursor-pointer" 
-                   onchange="handleComprehensionSelect('${q.id}', '${opt.code}')">
+                   onchange="handleComprehensionSelect('${q.id}', '${letter}')">
             <span class="text-gray-800 font-medium text-base">${displayText}</span>
         </label>
     `;
@@ -3481,22 +3481,23 @@ q.options.forEach((opt, idx) => {
 
  // ========== 【新增】判断阅读理解题答案是否正确 ==========
     // 正确答案（根据你图中标蓝的答案）
-    const CORRECT_ANSWERS = {
-        exp_q1: 'B',   // 缺水+断电
-        exp_q2: 'C',   // 1.4℃
-        ctrl_q1: 'C',  // 1.4℃
-        ctrl_q2: 'B'   // 预测达4℃；降至2.3—2.5℃
+const CORRECT_KEYWORDS = {
+    exp_q1: '缺水 + 断电',
+    exp_q2: '1.4℃',
+    ctrl_q1: '1.4℃',
+    ctrl_q2: '2.3—2.5℃'
     };
 
-    // 检查被试当前组别的题目是否答对
-    let allCorrect = true;
-    currentComprehensionOrder.forEach(q => {
-        const userAnswer = comprehensionResponses[q.id];
-        const correctAnswer = CORRECT_ANSWERS[q.id];
-        if (userAnswer !== correctAnswer) {
-            allCorrect = false;
-        }
-    });
+let allCorrect = true;
+currentComprehensionOrder.forEach(q => {
+    const userLetter = comprehensionResponses[q.id];      // 用户选的字母 A/B/C/D
+    const userOpt = q.options[userLetter.charCodeAt(0) - 65]; // 用字母反查选项对象
+    const userText = userOpt ? userOpt.text : '';
+    const correctKeyword = CORRECT_KEYWORDS[q.id];
+    if (!correctKeyword || !userText.includes(correctKeyword)) {
+        allCorrect = false;
+    }
+});
 
     // 如果答错了，先保存数据再跳转到提前结束页面
     if (!allCorrect) {
