@@ -1800,10 +1800,10 @@
                 <div class="translatable-block" onclick="toggleBlockTranslation(this)">
                     <div class="translate-tooltip">Click to translate / 点击翻译</div>
                     <p class="en-text">
-                        The report warns that humanity has entered a completely new "climate reality." With global warming at approximately <strong style="color: red;">1.4°C</strong>, warm-water coral reefs have practically crossed the irreversible tipping point of death. Furthermore, the irreversible melting of the Antarctic ice sheet, widespread dieback of the Amazon rainforest, and the risk of the Atlantic Ocean currents collapsing are accelerating. Once these natural systems <strong>cross their tipping points</strong>, their collapse will be sudden, severe, and completely uncontrollable.
+                        The report warns that humanity has entered a completely new "climate reality." With global warming at approximately <strong>1.4°C</strong>, warm-water coral reefs have practically crossed the irreversible tipping point of death. Furthermore, the irreversible melting of the Antarctic ice sheet, widespread dieback of the Amazon rainforest, and the risk of the Atlantic Ocean currents collapsing are accelerating. Once these natural systems <strong>cross their tipping points</strong>, their collapse will be sudden, severe, and completely uncontrollable.
                     </p>
                     <p class="cn-text cn-font">
-                        报告警告称，人类已进入一个全新的“气候现实”。随着全球升温约<strong style="color: red;">1.4°C</strong>，温水珊瑚礁已实质性<strong>跨越了不可逆转的死亡临界点</strong>。此外，南极冰盖的不可逆融化、亚马孙雨林的大面积枯死，以及大西洋洋流的崩溃风险也正加速逼近。
+                        报告警告称，人类已进入一个全新的“气候现实”。随着全球升温约<strong>1.4°C</strong>，温水珊瑚礁已实质性<strong>跨越了不可逆转的死亡临界点</strong>。此外，南极冰盖的不可逆融化、亚马孙雨林的大面积枯死，以及大西洋洋流的崩溃风险也正加速逼近。
                     </p>
                 </div>
 
@@ -2221,10 +2221,10 @@
                 <div class="translatable-block" onclick="toggleBlockTranslation(this)">
                     <div class="translate-tooltip">Click to translate / 点击翻译</div>
                     <p class="en-text">
-                        <span class="float-left text-7xl leading-none pr-3 font-bold text-gray-900 mt-[-8px]">T</span>he <strong>"Global Tipping Points Report 2025,"</strong> co-authored and released by 160 scientists from 87 institutions across 23 countries, indicates that global warming is approximately <strong style="color: red;">1.4°C</strong>. However, the latest assessments show that the global climate future is more controllable than it was a decade ago.
+                        <span class="float-left text-7xl leading-none pr-3 font-bold text-gray-900 mt-[-8px]">T</span>he <strong>"Global Tipping Points Report 2025,"</strong> co-authored and released by 160 scientists from 87 institutions across 23 countries, indicates that global warming is approximately <strong>1.4°C</strong>. However, the latest assessments show that the global climate future is more controllable than it was a decade ago.
                     </p>
                     <p class="cn-text cn-font">
-                        来自23个国家87个机构的160名科学家共同撰写并发布的<strong>《全球临界点报告2025》</strong>指出全球升温约<strong style="color: red;">1.4℃</strong>。但最新评估显示，全球气候未来比十年前更加可控。
+                        来自23个国家87个机构的160名科学家共同撰写并发布的<strong>《全球临界点报告2025》</strong>指出全球升温约<strong>1.4℃</strong>。但最新评估显示，全球气候未来比十年前更加可控。
                     </p>
                 </div>
 
@@ -3430,16 +3430,16 @@ persistCurrentProgress();
                 `;
 
 q.options.forEach((opt, idx) => {
-    const letter = String.fromCharCode(65 + idx);
-    const displayText = letter + ". " + opt.text;
+    const displayLetter = String.fromCharCode(65 + idx); // 只用于屏幕上好看，A/B/C/D
+    const displayText = displayLetter + ". " + opt.text;
 
     html += `
         <label class="flex items-center gap-3 p-3.5 bg-white border border-gray-200 rounded-xl hover:bg-blue-50/50 cursor-pointer transition">
             <input type="radio" 
                    name="comp_${q.id}" 
-                   value="${letter}" 
+                   value="${opt.code}" 
                    class="w-5 h-5 accent-blue-600 cursor-pointer" 
-                   onchange="handleComprehensionSelect('${q.id}', '${letter}')">
+                   onchange="handleComprehensionSelect('${q.id}', '${opt.code}')">
             <span class="text-gray-800 font-medium text-base">${displayText}</span>
         </label>
     `;
@@ -3480,21 +3480,18 @@ q.options.forEach((opt, idx) => {
             if (valMsg) valMsg.classList.add('hidden');
 
  // ========== 【新增】判断阅读理解题答案是否正确 ==========
-    // 正确答案（根据你图中标蓝的答案）
-const CORRECT_KEYWORDS = {
-    exp_q1: '缺水 + 断电',
-    exp_q2: '1.4℃',
-    ctrl_q1: '1.4℃',
-    ctrl_q2: '2.3—2.5℃'
-    };
+// 正确答案（用原始编号）
+const CORRECT_CODES = {
+    exp_q1: 'B',   // 缺水 + 断电
+    exp_q2: 'C',   // 1.4℃
+    ctrl_q1: 'C',  // 1.4℃
+    ctrl_q2: 'B'   // 2.3—2.5℃
+};
 
 let allCorrect = true;
 currentComprehensionOrder.forEach(q => {
-    const userLetter = comprehensionResponses[q.id];      // 用户选的字母 A/B/C/D
-    const userOpt = q.options[userLetter.charCodeAt(0) - 65]; // 用字母反查选项对象
-    const userText = userOpt ? userOpt.text : '';
-    const correctKeyword = CORRECT_KEYWORDS[q.id];
-    if (!correctKeyword || !userText.includes(correctKeyword)) {
+    const userCode = comprehensionResponses[q.id];   // 现在存的就是真名牌
+    if (!CORRECT_CODES[q.id] || userCode !== CORRECT_CODES[q.id]) {
         allCorrect = false;
     }
 });
